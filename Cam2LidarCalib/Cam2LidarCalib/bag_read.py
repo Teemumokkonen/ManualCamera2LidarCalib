@@ -15,7 +15,7 @@ bridge = CvBridge()
 def init_pangolin():
     pangolin.CreateWindowAndBind('Main', 1242, 375)
     gl.glEnable(gl.GL_DEPTH_TEST)
-
+    
     # Set up the camera with correct aspect ratio
     scam = pangolin.OpenGlRenderState(
         pangolin.ProjectionMatrix(1242, 375, 500, 420, 621, 187.5, 0.1, 1000),
@@ -85,7 +85,7 @@ def extract(args):
                 cv2.waitKey(0)
                 cv_image_rgb = cv2.flip(cv_image_rgb, 0) 
                 height, width, _ = cv_image_rgb.shape
-                
+                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
                 texture.Upload(cv_image_rgb, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
 
                 # Display the image
