@@ -30,7 +30,7 @@ class PinHoleProjection():
     def create_rotation_matrix(self, roll, pitch, yaw):
         print(f"roll: {roll}, pitch: {pitch}, yaw: {yaw}")
         # Create a rotation object from Euler angles (roll, pitch, yaw)
-        rotation = R.from_euler('xyz', [roll, pitch, yaw], degrees=False)
+        rotation = R.from_euler('zyx', [roll, pitch, yaw], degrees=False)
         return rotation.as_matrix()
 
     def update_extrinsics(self, roll, pitch, yaw, x, y, z):

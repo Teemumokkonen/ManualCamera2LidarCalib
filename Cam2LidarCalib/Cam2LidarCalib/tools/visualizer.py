@@ -17,7 +17,7 @@ class PangolinViz():
 
         # Set up the camera with correct aspect ratio
         panel = pangolin.CreatePanel('ui')
-        panel.SetBounds(0.0, 1.0, 0.0, 0.1)  # Adjusted for better balance
+        panel.SetBounds(0.0, 1.0, 0.0, 0.3)  # Adjusted for better balance
 
         scam = pangolin.OpenGlRenderState(
             pangolin.ProjectionMatrix(1242, 375, 500, 420, 621, 187.5, 0.1, 1000),
@@ -31,7 +31,7 @@ class PangolinViz():
 
         # Image display for fullscreen image
         dimg = pangolin.Display('image')
-        dimg.SetBounds(0.0, 1.0, 0.1, 1.0, 1242.0 / 375.0)  # Full screen except for the panel at the bottom
+        dimg.SetBounds(0.0, 1.0, 0.3, 1.0, 1242.0 / 375.0)  # Full screen except for the panel at the bottom
         dimg.SetLock(pangolin.Lock.LockLeft, pangolin.Lock.LockTop)
         return scam, dcam, dimg
     
@@ -50,8 +50,8 @@ class PangolinViz():
         float_slider_1 = pangolin.VarFloat('ui.y', value=-0.48, min=-0.5, max=0.5)
         float_slider_2 = pangolin.VarFloat('ui.z', value=-0.08, min=-0.5, max=0.5)
         float_slider_3 = pangolin.VarFloat('ui.roll', value=-1.57, min=-3.141592, max=3.14159)
-        float_slider_4 = pangolin.VarFloat('ui.pitch', value=-1.57, min=-3.14159/2, max=3.14159/2)
-        float_slider_5 = pangolin.VarFloat('ui.yaw', value=-0.0, min=-3.14159, max=3.14159)
+        float_slider_4 = pangolin.VarFloat('ui.pitch', value=0.0, min=-3.14159/2, max=3.14159/2)
+        float_slider_5 = pangolin.VarFloat('ui.yaw', value=-1.57, min=-3.14159, max=3.14159)
         texture = pangolin.GlTexture(1242, 375, gl.GL_RGB, False, 0, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
         pop_frame = pangolin.VarBool('ui.pop_frame', value=False, toggle=False)
 
