@@ -41,6 +41,12 @@ class PangolinViz():
         pcd.points = o3d.utility.Vector3dVector(cloud[:, :3])
         o3d.visualization.draw_geometries([pcd])
 
+    def save_extrinsics(self):
+        file_name = "cam_to_lidar"
+        np.save(file_name, self.projection.extrinsics)
+        print(f"File has been saved as {file_name}")
+
+
     def run(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
 
@@ -52,19 +58,24 @@ class PangolinViz():
         float_slider_3 = pangolin.VarFloat('ui.roll', value=-1.57, min=-3.141592, max=3.14159)
         float_slider_4 = pangolin.VarFloat('ui.pitch', value=0.0, min=-3.14159/2, max=3.14159/2)
         float_slider_5 = pangolin.VarFloat('ui.yaw', value=-1.57, min=-3.14159, max=3.14159)
+        float_slider_6 = pangolin.VarFloat('ui.intensity_limit', value=0.5, min=-0, max=1)
         texture = pangolin.GlTexture(1242, 375, gl.GL_RGB, False, 0, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
         pop_frame = pangolin.VarBool('ui.pop_frame', value=False, toggle=False)
+        save_extrinsics = pangolin.VarBool('ui.save_extrinsics', value=False, toggle=False)
 
         while not pangolin.ShouldQuit() and self.database.has_frames:
             if pangolin.Pushed(pop_frame):
                 self.database.pop_frame()
+            if pangolin.Pushed(save_extrinsics):
+                self.save_extrinsics()
             #slider_value = float(float_slider)
             x = float(float_slider)            
             y = float(float_slider_1)
             z = float(float_slider_2)
             roll = float(float_slider_3)
             pitch = float(float_slider_4)
-            yaw = float(float_slider_5)            
+            yaw = float(float_slider_5)       
+            self.projection.intensity_lim = float(float_slider_6)    
             self.projection.update_extrinsics(roll, pitch, yaw, x, y, z)
             # Main Pangolin display loop
             image, cloud = self.database.get_frame()
@@ -84,12 +95,11 @@ class PangolinViz():
             cv_image_rgb = cv2.flip(cv_image_rgb, 0)
             cv_image_rgb = cv2.flip(cv_image_rgb, 1) 
             height, width, _ = cv_image_rgb.shape
-            color = (255, 0, 0)  # Green color
             #cv2.circle(cv_image_rgb, (45, 45), radius=5, color=color, thickness=-1)
-            for u, v in coords[1]:
+            for u, v, c in np.hstack((coords[1], coords[2])):
                 if 0 <= u < width and 0 <= v < height:  # Check if coordinates are within image dimensions
-                    #print("point fit")
-                    cv2.circle(cv_image_rgb, (u, v), radius=1, color=color, thickness=-1)  # radius=5, thickness=-1 for filled circle
+                    color = ((1 - int(c)) * 255, int(c) * 255, 0)  # Green color
+                    cv2.circle(cv_image_rgb, (int(u), int(v)), radius=1, color=color, thickness=-1)  # radius=5, thickness=-1 for filled circle
 
             #cv_image_rgb = cv2.flip(cv_image_rgb, 0) 
             #cv_image_rgb = cv2.flip(cv_image_rgb, 1) 

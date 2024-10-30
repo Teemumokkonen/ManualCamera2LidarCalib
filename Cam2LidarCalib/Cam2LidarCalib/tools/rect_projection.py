@@ -25,10 +25,10 @@ class PinHoleProjection():
                                     [1.0000000,  0.0000000,  0.0000000, -0.08],
                                     [0.0, 0.0, 0.0, 1.0] ])
         self.filter_by_intensity = True
+        self.intensity_lim = 0.5
         
 
     def create_rotation_matrix(self, roll, pitch, yaw):
-        print(f"roll: {roll}, pitch: {pitch}, yaw: {yaw}")
         # Create a rotation object from Euler angles (roll, pitch, yaw)
         rotation = R.from_euler('zyx', [roll, pitch, yaw], degrees=False)
         return rotation.as_matrix()
@@ -53,12 +53,10 @@ class PinHoleProjection():
             
         points = np.expand_dims(points, axis=-1)  # Convert to shape (N, 4, 1) for matrix multiplication
         intensity = points[:, -1]  # Last column contains intensity values
-        print(len(intensity))
         avg_intensity = np.mean(intensity)  # Calculate average intensity
 
         # Filter points based on intensity
-        intensity_mask = np.where(np.any(intensity <= 0.05, axis=1))  # Mask for points with intensity >= average
-        print(intensity_mask)
+        intensity_mask = np.where(np.any(intensity <= self.intensity_lim, axis=1))  # Mask for points with intensity >= average
         points = points[intensity_mask]  # Keep only points with sufficient intensity
         # Apply extrinsics and projection matrix
         uvw = self.p @ self.extrinsics @ points
@@ -66,7 +64,7 @@ class PinHoleProjection():
         uvw /= uvw[:, [2]]  # Normalize homogeneous coordinates
         # Image dimensions
         height, width = 375, 1242
-
+    
         # Validity check for points within image bounds and positive depth
         indices = np.where((points[:, 0, 0] > 0) &
                            (uvw[:, 0] >= 0) & (uvw[:, 0] < width) &
@@ -74,6 +72,6 @@ class PinHoleProjection():
                            (uvw[:, 2] > 0))[0]  # Indices of valid points
 
         uv = uvw[indices][:, :2].astype(int)  # Extract (u, v) coordinates of valid points
-        return indices, uv
+        return indices, uv, intensity[indices]
 
 # Example usage
