@@ -13,7 +13,7 @@ import numpy as np
 bridge = CvBridge()
 
 def init_pangolin():
-    pangolin.CreateWindowAndBind('Main', 1242, 375)
+    pangolin.CreateWindowAndBind('Main', 1242 * 2, 375)
     gl.glEnable(gl.GL_DEPTH_TEST)
     
     # Set up the camera with correct aspect ratio
@@ -23,11 +23,12 @@ def init_pangolin():
 
     # Main display
     dcam = pangolin.CreateDisplay()
-    dcam.SetBounds(0.0, 1.0, 0.0, 1.0, 1242.0 / 375.0)  # Full window bounds
+    dcam.SetBounds(0.0, 1.0, 0.0, 0.5, 1242.0 / 375.0)  # Adjust bounds for splitting window
 
-    # Image display for fullscreen image
-    dimg = pangolin.Display('image')
-    dimg.SetBounds(0.0, 1.0, 0.0, 1.0, 1242.0 / 375.0)  # Full window bounds
+    # Create image display
+    dimg = pangolin.Display("img")
+    dimg.SetBounds(0.0, 1.0, 0.5, 1.0, 1242.0 / 375.0)  # Adjust bounds for the image
+
     dimg.SetLock(pangolin.Lock.LockLeft, pangolin.Lock.LockTop)
 
     return scam, dcam, dimg
@@ -76,8 +77,6 @@ def extract(args):
                 gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
                 gl.glClearColor(0.95, 0.95, 0.95, 1.0)
 
-                dcam.Activate(scam)
-
                 # Convert ROS2 image message to OpenCV image in RGB format
                 cv_image = bridge.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
                 cv_image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)  # Convert to RGB
@@ -90,6 +89,7 @@ def extract(args):
 
                 # Display the image
                 dimg.Activate()
+                dcam.Activate(scam)
                 gl.glColor3f(1.0, 1.0, 1.0)
                 texture.RenderToViewport()
 

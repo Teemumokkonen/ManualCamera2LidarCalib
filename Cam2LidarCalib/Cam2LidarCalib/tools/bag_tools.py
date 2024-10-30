@@ -32,7 +32,7 @@ class BagReader():
                     self.cloud_queue.append((timestamp, msg))
 
         print("data loaded from bag")
-
+        
     def convert_rosbag_cloud_to_sensor_msgs(self, cloud_msg):
         # Manually construct a PointCloud2 message
         msg = PointCloud2()
