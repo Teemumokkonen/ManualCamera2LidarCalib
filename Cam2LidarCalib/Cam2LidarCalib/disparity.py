@@ -12,16 +12,6 @@ import rclpy
 from rclpy.node import Node
 import struct
 from std_msgs.msg import Header
-import open3d as o3d
-# prepare the point cloud viewer
-pcd = o3d.geometry.PointCloud()
-vis = o3d.visualization.Visualizer()
-vis.create_window(window_name='Point Cloud', width=2000, height=600)
-vis.get_render_option().show_coordinate_frame = True
-vis.get_render_option().background_color = np.array([0.9,0.9,0.9])
-ctr = vis.get_view_control()
-parameters = o3d.io.read_pinhole_camera_parameters("pc_camera_params.json")
-ctr.convert_from_pinhole_camera_parameters(parameters)
 
 class CloudPublisher(Node):
 
@@ -73,7 +63,9 @@ class CalibrationTool():
         
         while True:
             img = self.bag_queue.get_frame()[0]
-            width, height, _    = img.shape
+            height, width, _    = img.shape
+            print(width)
+            print(height)
             x = np.tile(np.arange(width), height)
             y = np.repeat(np.arange(height), width)[::-1]
 
@@ -85,20 +77,12 @@ class CalibrationTool():
             #cv2.imshow("original image", img)
             #cv2.waitKey(0)
             self.bag_queue.pop_frame()
-            xyz[:,2] = disparity_img.flatten() * 2.0
+            xyz[:,2] = disparity_img.flatten()
             rgb = img.reshape(-1, img.shape[-1])
             rgb = rgb[:,[2,1,0]]
-            rgb = rgb.astype('float') / 255.0
-            #self.ros_node.pub_cloud(xyz, rgb)
-            print("viz cloud")
-            parameters = ctr.convert_to_pinhole_camera_parameters()
-            vis.remove_geometry(pcd, False)
-            vis.add_geometry(pcd, True)
-            ctr.convert_from_pinhole_camera_parameters(parameters)
-            vis.update_geometry(pcd)
-            vis.poll_events()
-            vis.update_renderer()
-            
+            rgb = rgb.astype('float')
+            self.ros_node.pub_cloud(xyz, rgb)
+
 
 def main():
     rclpy.init()
