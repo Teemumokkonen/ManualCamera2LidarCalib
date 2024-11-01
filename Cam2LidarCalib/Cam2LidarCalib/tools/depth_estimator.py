@@ -33,7 +33,9 @@ class DepthEstimator():
             ).squeeze()
 
         output = prediction.cpu().numpy()
-        output = ((output - output.min()) * (1 / (output.max() - output.min()) * 255)).astype(np.uint8)
+        print(np.min(output))
+        print(np.max(output))
+        #output = ((output - output.min()) * (1 / (output.max() - output.min()) * 255)).astype(np.uint8)
         return output
 
 

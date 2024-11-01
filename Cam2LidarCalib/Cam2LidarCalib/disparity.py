@@ -119,7 +119,7 @@ class CalibrationTool():
             for y in range(height):
                 for x in range(width):
                     Z = disparity_img[y, x]
-                    if Z > 0:  # skip invalid disparity values
+                    if  Z > 0:  # skip invalid disparity values
                         #Z = (fx * baseline) / d
                         X = (x - 6.095593e+02) * Z / 7.215377e+02
                         Y = (y - 1.728540e+02) * Z / 7.215377e+02
@@ -127,10 +127,12 @@ class CalibrationTool():
                         #print(f"y coordinate of the image {Y}")
                         trans = np.linalg.inv(extrinsics) @ np.array([X, Y, Z, 1]).T
                         #print(trans[:3])
-                        XYZ.append([trans[0], trans[1], trans[2]])
+                        XYZ.append([trans[0], trans[1], -trans[2]])
             self.ros_node.pub_cloud(XYZ, rgb)
             self.ros_node.pub_kitti_cloud(cloud)
-
+            #cv2.imshow("disparity map", disparity_img)
+            #cv2.imshow("original image", img)
+            #cv2.waitKey(0)
 
 def main():
     rclpy.init()
