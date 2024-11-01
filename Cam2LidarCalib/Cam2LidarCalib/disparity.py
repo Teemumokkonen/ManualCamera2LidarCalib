@@ -17,7 +17,8 @@ class CloudPublisher(Node):
 
     def __init__(self):
         super().__init__('minimal_publisher')
-        self.publisher_ = self.create_publisher(PointCloud2, 'disparity/cloud', 10)
+        self.publisher_ = self.create_publisher(PointCloud2, 'disparity/cloud', 1)
+        self.cloud_pub = self.create_publisher(PointCloud2, "velodyne/cloud", 1)
 
     def create_pointcloud2_msg(self, points, colors, frame_id="kitti_velo"):
         header = Header()
@@ -40,6 +41,27 @@ class CloudPublisher(Node):
         pointcloud_msg = create_cloud(header, fields=fields, points=cloud_data)
         return pointcloud_msg
 
+    def create_pointcloud2_msg_xyzI(self, points, frame_id="kitti_velo"):
+        header = Header()
+        header.frame_id = "kitti_velo"
+        header.stamp = self.get_clock().now().to_msg()
+        fields = [
+            PointField(name="x", offset=0, datatype=PointField.FLOAT32, count=1),
+            PointField(name="y", offset=4, datatype=PointField.FLOAT32, count=1),
+            PointField(name="z", offset=8, datatype=PointField.FLOAT32, count=1),
+            PointField(name="intensity", offset=12, datatype=PointField.FLOAT32, count=1)
+        ]
+        
+        # Pack the RGB colors as floats
+        cloud_data = []
+        for (x, y, z, i) in points:
+            #rgb = struct.unpack('f', struct.pack('I', (int(r) << 16) | (int(g) << 8) | int(b)))[0]
+            cloud_data.append([x, y, z, i])
+
+        # Create the PointCloud2 message
+        pointcloud_msg = create_cloud(header, fields=fields, points=cloud_data)
+        return pointcloud_msg
+
     def pub_cloud(self, xyz, rgb):
         msg = PointCloud2()
         header = Header()
@@ -47,6 +69,14 @@ class CloudPublisher(Node):
         header.stamp = self.get_clock().now().to_msg()
         cloud = self.create_pointcloud2_msg(xyz, rgb)
         self.publisher_.publish(cloud)
+
+    def pub_kitti_cloud(self, cloud):
+        msg = PointCloud2()
+        header = Header()
+        header.frame_id = "kitti_velo"
+        header.stamp = self.get_clock().now().to_msg()
+        cloud = self.create_pointcloud2_msg_xyzI(cloud)
+        self.cloud_pub.publish(cloud)
 
 
 class CalibrationTool():
@@ -62,10 +92,10 @@ class CalibrationTool():
         #self.visualizer.run()
         
         while True:
-            img = self.bag_queue.get_frame()[0]
+            img, cloud = self.bag_queue.get_frame()
+            img = cv2.flip(img, 0)
+            img = cv2.flip(img, 1) 
             height, width, _    = img.shape
-            print(width)
-            print(height)
             x = np.tile(np.arange(width), height)
             y = np.repeat(np.arange(height), width)[::-1]
 
@@ -81,7 +111,25 @@ class CalibrationTool():
             rgb = img.reshape(-1, img.shape[-1])
             rgb = rgb[:,[2,1,0]]
             rgb = rgb.astype('float')
-            self.ros_node.pub_cloud(xyz, rgb)
+            XYZ = []
+            extrinsics = np.array([[0.0000000,  1.0000000,  0.0000000, 0.27],
+                    [0.0000000,  0.0000000,  1.0000000, -0.48],
+                    [1.0000000,  0.0000000,  0.0000000, -0.08],
+                    [0.0, 0.0, 0.0, 1.0] ])
+            for y in range(height):
+                for x in range(width):
+                    Z = disparity_img[y, x]
+                    if Z > 0:  # skip invalid disparity values
+                        #Z = (fx * baseline) / d
+                        X = (x - 6.095593e+02) * Z / 7.215377e+02
+                        Y = (y - 1.728540e+02) * Z / 7.215377e+02
+                        #print(f"x coordinate of the image: {X}")
+                        #print(f"y coordinate of the image {Y}")
+                        trans = np.linalg.inv(extrinsics) @ np.array([X, Y, Z, 1]).T
+                        #print(trans[:3])
+                        XYZ.append([trans[0], trans[1], trans[2]])
+            self.ros_node.pub_cloud(XYZ, rgb)
+            self.ros_node.pub_kitti_cloud(cloud)
 
 
 def main():
